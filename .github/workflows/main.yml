@@ -1,0 +1,54 @@
+name: Build LimitBoard APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract LimitBoard source
+        run: unzip -q LimitBoard-Android-v1.0.0-source.zip -d source
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+          cache-dependency-path: source/LimitBoard/**/*.gradle*
+
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Test usage parser
+        working-directory: source/LimitBoard
+        run: node tests/test-parser.mjs
+
+      - name: Build debug APK
+        working-directory: source/LimitBoard
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Prepare APK
+        run: cp source/LimitBoard/app/build/outputs/apk/debug/app-debug.apk LimitBoard-v1.0.0-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LimitBoard-APK
+          path: LimitBoard-v1.0.0-debug.apk
+          if-no-files-found: error
+          retention-days: 30
