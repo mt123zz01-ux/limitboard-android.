@@ -33,7 +33,10 @@ jobs:
         run: |
           $repo = $env:GITHUB_REPOSITORY
           $url = "https://x-access-token:${env:GH_TOKEN}@github.com/$repo.git"
-          git clone --depth 1 --branch $env:GITHUB_REF_NAME $url C:\zc
+          # core.autocrlf=false: Git for Windows mac dinh doi LF -> CRLF khi
+          # checkout, lam doi byte file nguon so voi noi dung trong repo.
+          git -c core.autocrlf=false -c core.eol=lf clone --depth 1 `
+            --branch $env:GITHUB_REF_NAME $url C:\zc
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Set up Node.js 22
@@ -53,7 +56,16 @@ jobs:
         working-directory: ${{ env.ZCORE_DIR }}
         shell: pwsh
         # Rang buoc Repair 22: ba controller nay phai giu nguyen byte-for-byte.
+        # Hash duoc tinh tren noi dung da chuan hoa ve LF, nen ket qua giong nhau
+        # tren moi may du cau hinh core.autocrlf cua git la gi. Chi thay doi noi
+        # dung that su moi lam buoc nay that bai.
         run: |
+          function Get-NormalizedHash($path) {
+            $text = [System.IO.File]::ReadAllText($path) -replace "`r`n", "`n"
+            $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($text)
+            $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+            return [System.BitConverter]::ToString($hash).Replace('-', '').ToLower()
+          }
           $expected = @{
             "src/core/AutoSellController.js"    = "46ec1180130f866260089a73571c518ee529e1f62665a031f318210af4351f59"
             "src/core/AutoSellAxeController.js" = "e796aaac6d2fedc25a7426f8f0ddbbee508a11bf34c699b5bc093cfb2100902a"
@@ -61,7 +73,7 @@ jobs:
           }
           $failed = $false
           foreach ($file in $expected.Keys) {
-            $actual = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLower()
+            $actual = Get-NormalizedHash $file
             if ($actual -ne $expected[$file]) {
               Write-Host "DOI: $file"
               Write-Host "  mong doi: $($expected[$file])"

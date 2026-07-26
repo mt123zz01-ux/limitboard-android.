@@ -1,0 +1,14 @@
+# ZCore duoc dong goi vao app.asar va chay tren Node nen LF la chuan.
+#
+# Git for Windows mac dinh core.autocrlf=true, se doi LF -> CRLF khi checkout.
+# Dieu do lam doi byte cua file nguon va pha vo buoc kiem tra SHA-256 bao dam
+# logic Auto Sell khong bi sua. Ep LF de moi may checkout ra cung mot noi dung.
+* text=auto eol=lf
+
+# File batch cua Windows giu CRLF theo dung quy uoc cua he dieu hanh.
+*.bat text eol=crlf
+
+# Tai nguyen nhi phan khong duoc dung vao.
+*.ico binary
+*.png binary
+*.exe binary
