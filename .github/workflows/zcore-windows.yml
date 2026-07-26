@@ -1,0 +1,83 @@
+name: Build ZCore Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - claude/read-evaluate-source-rupwlr
+    paths:
+      - "zcore/**"
+      - ".github/workflows/zcore-windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Build tren Windows runner that de EXE khop moi truong nguoi dung chay.
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: zcore/package-lock.json
+
+      - name: Install dependencies
+        working-directory: zcore
+        run: npm ci
+
+      - name: Run tests
+        working-directory: zcore
+        run: npm test
+
+      - name: Verify Auto Sell logic is untouched
+        working-directory: zcore
+        shell: pwsh
+        # Rang buoc Repair 22: ba controller nay phai giu nguyen byte-for-byte.
+        run: |
+          $expected = @{
+            "src/core/AutoSellController.js"    = "46ec1180130f866260089a73571c518ee529e1f62665a031f318210af4351f59"
+            "src/core/AutoSellAxeController.js" = "e796aaac6d2fedc25a7426f8f0ddbbee508a11bf34c699b5bc093cfb2100902a"
+            "src/core/AutoHomeController.js"    = "bf23fecbf5c703b885d5b81ce764e09f2689d5cbbf7a89fc196c3272fffdc4e2"
+          }
+          $failed = $false
+          foreach ($file in $expected.Keys) {
+            $actual = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLower()
+            if ($actual -ne $expected[$file]) {
+              Write-Host "DOI: $file"
+              Write-Host "  mong doi: $($expected[$file])"
+              Write-Host "  thuc te : $actual"
+              $failed = $true
+            } else {
+              Write-Host "GIU NGUYEN: $file"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Build Setup and Portable EXE
+        working-directory: zcore
+        run: npm run dist:win
+
+      - name: Upload Setup installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZCore-Setup-x64
+          path: zcore/dist/setup/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZCore-Portable-x64
+          path: zcore/dist/portable/*.exe
+          if-no-files-found: error
+          retention-days: 30
