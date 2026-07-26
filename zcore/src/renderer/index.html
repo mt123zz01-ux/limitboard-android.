@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+    <title>ZCore</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <img src="../../assets/zcore-logo.svg" alt="ZCore">
+          <div><strong>ZCore</strong><span>AUTO SELL CLIENT</span></div>
+        </div>
+
+        <button id="new-profile" class="new-profile"><span>＋</span><span><b>Thêm tài khoản</b><small>Tạo một profile mới</small></span></button>
+
+        <div class="profile-heading">
+          <span>TÀI KHOẢN</span>
+          <b id="profile-summary">0 / 0 online</b>
+        </div>
+        <div id="profile-list" class="profile-list"></div>
+
+        <button id="open-help-sidebar" class="sidebar-help">
+          <span class="help-icon">?</span>
+          <span><b>Chưa biết dùng?</b><small>Xem hướng dẫn 4 bước</small></span>
+        </button>
+        <div class="sidebar-footer"><span class="version-dot"></span> Minecraft Java 1.21.11 · Repair 22</div>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div class="profile-title">
+            <span>PROFILE ĐANG CHỌN</span>
+            <h1 id="selected-profile-name">Chưa có tài khoản</h1>
+          </div>
+          <div class="server-box">
+            <small>SERVER</small>
+            <div><span id="server-host">Hãy tạo Profile</span><span class="server-port" id="server-port"></span></div>
+          </div>
+          <div id="status-pill" class="status-pill offline"><span></span> OFFLINE</div>
+
+          <div class="primary-actions">
+            <button id="start-bot" class="action start"><span class="action-icon">▶</span><b>Bắt đầu</b></button>
+            <button id="stop-bot" class="action stop"><span class="action-icon">■</span><b>Dừng</b></button>
+            <button id="headless-mode" class="action headless"><span class="action-icon">⚡</span><b>Treo siêu nhẹ</b></button>
+          </div>
+          <div class="topbar-icons">
+            <button id="open-help" class="icon-button" title="Hướng dẫn sử dụng">?</button>
+            <button id="duplicate-profile" class="icon-button" title="Sao chép profile">⧉</button>
+            <button id="edit-profile" class="icon-button primary-icon" title="Cài đặt profile">⚙</button>
+          </div>
+        </header>
+
+        <section class="hint-bar">
+          <div class="next-step">
+            <div class="step-number" id="next-step-number">1</div>
+            <div class="step-copy">
+              <h2 id="next-step-title">Tạo profile đầu tiên</h2>
+              <p id="next-step-description">Thêm tài khoản Minecraft và địa chỉ server để bắt đầu.</p>
+            </div>
+          </div>
+          <div class="quick-settings">
+            <label class="quick-toggle" title="Có đồ là gửi /sell, quickAll rồi đóng GUI">
+              <span class="switch"><input id="toggle-autosell" type="checkbox"><span></span></span>
+              <b>Auto Sell</b>
+            </label>
+            <label class="quick-toggle" title="Giữ chuột trái liên tục, kể cả khi GUI mở">
+              <span class="switch orange"><input id="toggle-autosell-axe" type="checkbox"><span></span></span>
+              <b>AutoSellAxe</b>
+            </label>
+            <label class="quick-toggle" title="Gửi /home theo chu kỳ">
+              <span class="switch green"><input id="toggle-autohome" type="checkbox"><span></span></span>
+              <b>Auto Home</b><small id="autohome-summary">/home 1 · 5 phút</small>
+            </label>
+            <label class="quick-toggle" title="Báo cáo và cảnh báo qua Discord">
+              <span class="switch purple"><input id="toggle-webhook" type="checkbox"><span></span></span>
+              <b>Discord</b>
+            </label>
+            <button id="reset-stats" class="reset-button" title="Đặt số lượt sell và tiền kiếm trong phiên về 0">↻ Reset</button>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <div class="terminal-column">
+            <div class="terminal">
+              <div class="terminal-head">
+                <div class="window-dots"><i></i><i></i><i></i></div>
+                <span>Console bot — hoạt động gần đây</span>
+                <button id="open-logs">Mở logs</button>
+                <button id="scroll-console-bottom">Xuống cuối</button>
+                <button id="clear-console">Xóa</button>
+              </div>
+              <div id="terminal-output" class="terminal-output">
+                <div class="empty-console">Chưa có hoạt động. Hãy chọn profile và nhấn “Bắt đầu”.</div>
+              </div>
+              <form id="command-form" class="command-box">
+                <span class="command-prompt">›_</span>
+                <input id="command-input" maxlength="256" autocomplete="off" spellcheck="false" placeholder="Gửi lệnh vào game — ví dụ: /pay TenNguoiChoi 1000">
+                <button id="command-send" type="submit">Gửi ↵</button>
+              </form>
+            </div>
+            <div class="command-help">Chỉ gửi được khi bot <b>ONLINE</b>. Phím ↑ ↓ để xem lại lệnh đã gửi.</div>
+          </div>
+
+          <aside class="stats-panel">
+            <div class="player-card">
+              <div class="avatar-small"><span id="player-initial">?</span></div>
+              <div><h2 id="player-name">Chưa đăng nhập</h2><div id="player-status" class="mini-status offline">● OFFLINE</div></div>
+            </div>
+
+            <div class="money-card featured">
+              <span>SỐ TIỀN HIỆN CÓ</span>
+              <button id="refresh-balance" class="balance-refresh" type="button">Cập nhật ngay</button>
+              <strong id="current-balance">$0</strong>
+              <small id="current-balance-source">Đang chờ lần cập nhật /balance đầu tiên</small>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-cell"><span>THỜI GIAN TREO</span><strong id="uptime">00:00:00</strong></div>
+              <div class="stat-cell"><span>LẦN AUTO SELL</span><strong id="sales-count">0</strong></div>
+              <div class="stat-cell green"><span>KIẾM PHIÊN NÀY</span><strong id="total-earned">$0</strong></div>
+              <div class="stat-cell yellow"><span>TRUNG BÌNH / GIỜ</span><strong id="earned-hour">$0/h</strong></div>
+            </div>
+
+            <div class="panel-label">TRẠNG THÁI</div>
+            <div class="health-summary">
+              <div><span>Auto Sell</span><b id="autosell-state">ĐANG TẮT</b></div>
+              <div><span>Auto Home</span><b id="autohome-state">ĐANG TẮT</b></div>
+              <div><span>Engine</span><b id="engine-state">PROTOCOL MAX</b></div>
+              <div><span>Chế độ nhẹ</span><b id="afk-lite-state">BẬT</b></div>
+              <div><span>Bộ nhớ worker</span><b id="worker-health-state">ĐÃ GIẢI PHÓNG</b></div>
+            </div>
+
+            <details class="technical-details">
+              <summary>Thông tin kỹ thuật</summary>
+              <div class="protection-card">
+                <div><span>Chia worker</span><b id="worker-state">BẬT — WORKER RIÊNG</b></div>
+                <div><span>Theo dõi số dư</span><b id="balance-command-state">BẬT — /BALANCE</b></div>
+                <div><span>Bảo vệ vị trí</span><b id="coordinate-state">TẮT</b></div>
+                <div><span>Whitelist guard</span><b id="guard-state">TẮT</b></div>
+              </div>
+            </details>
+          </aside>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="profile-dialog" class="modal profile-modal">
+      <form id="profile-form" method="dialog">
+        <div class="modal-head">
+          <div><span>THIẾT LẬP TÀI KHOẢN</span><h2 id="profile-dialog-title">Tạo Profile</h2><p>Phần có dấu <b>*</b> là bắt buộc. Nếu chưa rõ, hãy giữ nguyên các mục “Khuyên dùng”.</p></div>
+          <button type="button" class="modal-close" data-close="profile-dialog">×</button>
+        </div>
+        <input id="profile-id" type="hidden">
+
+        <section class="form-section required-section">
+          <div class="form-section-title"><i>1</i><div><h3>Thông tin kết nối</h3><p>Thông tin cần thiết để tài khoản vào đúng server.</p></div></div>
+          <div class="form-grid">
+            <label><span>Tên hiển thị profile <b>*</b></span><input id="profile-name" required maxlength="48" placeholder="Ví dụ: Acc đào đá 1"><small>Tên này chỉ hiện trong ZCore.</small></label>
+            <label><span>Email tài khoản Microsoft</span><input id="profile-account" maxlength="160" placeholder="name@example.com"><small>Nên nhập để phân biệt token khi treo nhiều acc.</small></label>
+            <label class="wide"><span>Địa chỉ server <b>*</b></span><div class="host-row"><input id="profile-host" required maxlength="255" placeholder="play.server.net"><input id="profile-port" type="number" min="1" max="65535" value="25565" title="Port server"></div><small>Ô nhỏ bên phải là port; thường giữ 25565.</small></label>
+          </div>
+        </section>
+
+        <section class="form-section recommended-section">
+          <div class="form-section-title"><i>2</i><div><h3>Cấu hình khuyên dùng</h3><p>Đã tối ưu cho 3–5 tài khoản. Người dùng mới nên giữ nguyên.</p></div><span class="recommended-badge">KHUYÊN BẬT</span></div>
+          <label class="engine-setting">
+            <span><b>Engine kết nối</b><small>Protocol Max dùng ít RAM/CPU nhất. Chỉ đổi sang Mineflayer nếu server đặc biệt không tương thích.</small></span>
+            <select id="profile-client-engine">
+              <option value="protocol">Protocol Max — khuyên dùng</option>
+              <option value="mineflayer">Mineflayer — chế độ tương thích</option>
+            </select>
+          </label>
+          <div class="option-grid">
+            <label class="setting-option"><input id="profile-auto-sell" type="checkbox" checked><span><b>Auto Sell liên tục</b><small>Có ít nhất một vật phẩm sẽ gửi /sell, quickAll rồi đóng GUI và lặp lại.</small></span></label>
+            <label class="setting-option axe-option"><input id="profile-auto-sell-axe" type="checkbox"><span><b>AutoSellAxe Member</b><small>Giữ chuột trái liên tục, kể cả khi GUI mở; tự bật lại khi reconnect thành công.</small></span></label>
+            <label class="setting-option axe-option"><input id="profile-auto-sell-axe-look-up" type="checkbox" checked><span><b>Tự nhìn thẳng lên trời</b><small>Mỗi 5 phút kiểm tra một lần; nếu đang nhìn đúng hướng thì không gửi lại góc nhìn.</small></span></label>
+            <label class="setting-option"><input id="profile-auto-home" type="checkbox"><span><b>Auto Home định kỳ</b><small>Gửi /home theo số home và số phút đã chọn.</small></span></label>
+            <label class="setting-option"><input id="profile-reconnect" type="checkbox" checked><span><b>Tự kết nối lại</b><small>Tự vào lại server sau khi mất kết nối.</small></span></label>
+            <label class="setting-option"><input id="profile-worker" type="checkbox" checked><span><b>Worker riêng</b><small>Cô lập từng acc, tránh một acc làm đơ acc khác.</small></span></label>
+            <label class="setting-option"><input id="profile-afk-lite" type="checkbox" checked><span><b>AFK Max</b><small>Giảm chunk và tác vụ không cần thiết.</small></span></label>
+            <label class="setting-option"><input id="profile-balance-tracking" type="checkbox" checked><span><b>Theo dõi số dư</b><small>Tắt mục này để bỏ hoàn toàn /balance, scoreboard và xử lý số dư.</small></span></label>
+            <label class="setting-option"><input id="profile-balance-command" type="checkbox" checked><span><b>Dùng /balance tự động</b><small>Gửi /balance mỗi 30 giây. Bỏ chọn để đọc scoreboard/chat thay thế.</small></span></label>
+            <label class="setting-option"><input id="profile-console" type="checkbox" checked><span><b>Hiện chat console</b><small>Giúp kiểm tra thông báo từ server.</small></span></label>
+            <label class="setting-option"><input id="profile-stats" type="checkbox" checked><span><b>Thống kê thu nhập</b><small>Hiện tiền kiếm được và số lượt sell.</small></span></label>
+          </div>
+          <div class="number-settings autosell-delay-settings">
+            <label><span>Delay vòng cố định</span><div><input id="profile-auto-sell-delay" type="number" min="0.05" max="60" step="0.05" value="0.2"><em>giây</em></div><small>Dùng khi tắt Random.</small></label>
+            <label class="random-delay-switch"><span>Random Min → Max</span><div><input id="profile-auto-sell-random" type="checkbox" checked><em>ngẫu nhiên</em></div><small>Khuyên bật để lặp tự nhiên hơn.</small></label>
+            <label><span>Delay vòng Min</span><div><input id="profile-auto-sell-delay-min" type="number" min="0.05" max="60" step="0.05" value="0.15"><em>giây</em></div><small>Sau khi đóng GUI.</small></label>
+            <label><span>Delay vòng Max</span><div><input id="profile-auto-sell-delay-max" type="number" min="0.05" max="60" step="0.05" value="0.3"><em>giây</em></div><small>Trước vòng kiểm tra tiếp theo.</small></label>
+          </div>
+          <div class="number-settings inventory-check-delay-settings">
+            <label><span>Quét túi trống Min</span><div><input id="profile-auto-sell-check-delay-min" type="number" min="0.05" max="60" step="0.05" value="0.1"><em>giây</em></div><small>Chờ ít nhất trước khi kiểm tra lại.</small></label>
+            <label><span>Quét túi trống Max</span><div><input id="profile-auto-sell-check-delay-max" type="number" min="0.05" max="60" step="0.05" value="0.2"><em>giây</em></div><small>Ngẫu nhiên từ Min → Max.</small></label>
+            <label><span>GUI timeout</span><div><input id="profile-auto-sell-gui-timeout" type="number" min="0.05" max="60" step="0.05" value="3"><em>giây</em></div><small>Chờ đúng GUI 90 slot sau /sell.</small></label>
+          </div>
+          <div class="number-settings autosell-transfer-delay-settings">
+            <label><span>QuickAll Min</span><div><input id="profile-auto-sell-quick-delay-min" type="number" min="0.05" max="60" step="0.05" value="0.05"><em>giây</em></div><small>Nghỉ giữa từng nhóm vật phẩm.</small></label>
+            <label><span>QuickAll Max</span><div><input id="profile-auto-sell-quick-delay-max" type="number" min="0.05" max="60" step="0.05" value="0.1"><em>giây</em></div><small>Ngẫu nhiên từ Min → Max.</small></label>
+            <label><span>Chờ server Min</span><div><input id="profile-auto-sell-move-delay-min" type="number" min="0.05" max="60" step="0.05" value="0.25"><em>giây</em></div><small>Sau quickAll, trước khi đóng GUI.</small></label>
+            <label><span>Chờ server Max</span><div><input id="profile-auto-sell-move-delay-max" type="number" min="0.05" max="60" step="0.05" value="0.4"><em>giây</em></div><small>Giúp server nhận đủ vật phẩm.</small></label>
+          </div>
+          <div class="number-settings autosell-system-delay-settings">
+            <label><span>Nghỉ sau lỗi</span><div><input id="profile-auto-sell-error-cooldown" type="number" min="0.05" max="60" step="0.05" value="1"><em>giây</em></div><small>Catch lỗi, ghi log rồi thử lại.</small></label>
+            <label><span>Nhịp xử lý</span><div><input id="profile-auto-sell-tick-ms" type="number" min="20" max="1000" step="1" value="50"><em>ms</em></div><small>Tần suất kiểm tra trạng thái Auto Sell.</small></label>
+            <div class="feature-note"><b>Mặc định nhanh, vẫn an toàn</b><small>Nếu server phản hồi chậm hoặc mất item, tăng “Chờ server” trước; không nên hạ Nhịp xử lý dưới 20 ms.</small></div>
+          </div>
+          <div class="number-settings auto-home-settings">
+            <label><span>Số Home</span><div><select id="profile-auto-home-number"><option value="1">Home 1</option><option value="2">Home 2</option><option value="3">Home 3</option><option value="4">Home 4</option></select></div><small>Lệnh gửi: /home 1–4.</small></label>
+            <label><span>Gửi Home mỗi</span><div><input id="profile-auto-home-delay" type="number" min="1" max="1440" step="1" value="5"><em>phút</em></div><small>Tính từ lúc ONLINE hoặc lúc lưu thay đổi.</small></label>
+            <div class="feature-note"><b>Không đụng GUI Sell</b><small>Đến giờ mà đang quickAll, Auto Home chờ GUI đóng rồi mới gửi và tạm nghỉ Auto Sell 3 giây.</small></div>
+          </div>
+          <div class="number-settings reconnect-setting">
+            <label><span>Reconnect sau</span><div><input id="profile-reconnect-delay" type="number" min="1" max="300" value="10"><em>giây</em></div><small>Khuyên dùng: 10 giây</small></label>
+          </div>
+        </section>
+
+        <details class="form-section advanced-section">
+          <summary><span><b>Discord Webhook</b><small>Báo cáo và cảnh báo riêng cho từng profile</small></span><i>⌄</i></summary>
+          <div class="detail-content">
+            <label class="setting-option single"><input id="profile-webhook-enabled" type="checkbox"><span><b>Bật Discord Webhook</b><small>Chỉ bật sau khi đã nhập URL hợp lệ.</small></span></label>
+            <label><span>Webhook URL</span><input id="profile-webhook-url" type="password" autocomplete="off" placeholder="https://discord.com/api/webhooks/..."></label>
+            <label class="webhook-user-id"><span>Discord User ID để @user</span><input id="profile-webhook-user-id" inputmode="numeric" maxlength="32" autocomplete="off" placeholder="Ví dụ: 123456789012345678"><small>Để trống nếu không muốn tag. Dùng User ID, không phải tên Discord.</small></label>
+            <div class="option-grid webhook-alert-grid">
+              <label class="setting-option"><input id="profile-webhook-report" type="checkbox" checked><span><b>Báo cáo định kỳ</b><small>Gửi thời gian treo, thu nhập và số lượt bán.</small></span></label>
+              <label class="setting-option"><input id="profile-webhook-death" type="checkbox"><span><b>Cảnh báo chết</b><small>Gửi ngay khi nhân vật chết.</small></span></label>
+              <label class="setting-option"><input id="profile-webhook-stranger" type="checkbox"><span><b>Cảnh báo người lạ</b><small>Mỗi người chỉ báo một lần khi mới đi vào bán kính.</small></span></label>
+              <label class="setting-option"><input id="profile-webhook-no-sell" type="checkbox"><span><b>Cảnh báo không sell</b><small>Bot vẫn ONLINE nhưng không hoàn tất lượt bán trong thời gian đã chọn.</small></span></label>
+              <label class="setting-option"><input id="profile-webhook-offline" type="checkbox"><span><b>Cảnh báo OFFLINE</b><small>Chỉ báo khi mất kết nối ngoài ý muốn, không báo khi bấm Stop.</small></span></label>
+            </div>
+            <div class="number-settings webhook-number-settings">
+              <label><span>Gửi báo cáo mỗi</span><div><input id="profile-webhook-interval" type="number" min="1" max="1440" step="1" value="60"><em>phút</em></div></label>
+              <label><span>Báo không sell sau</span><div><input id="profile-webhook-no-sell-minutes" type="number" min="1" max="1440" step="1" value="5"><em>phút</em></div><small>Tính từ lúc ONLINE hoặc từ lượt sell hoàn tất gần nhất.</small></label>
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section advanced-section">
+          <summary><span><b>Proxy kết nối</b><small>Mỗi acc có thể dùng một proxy riêng — không bắt buộc</small></span><i>⌄</i></summary>
+          <div class="detail-content">
+            <label class="setting-option single"><input id="profile-proxy-enabled" type="checkbox"><span><b>Sử dụng proxy</b><small>Chỉ bật nếu bạn có proxy hoạt động.</small></span></label>
+            <div class="form-grid">
+              <label><span>Loại proxy</span><select id="profile-proxy-type"><option value="SOCKS5">SOCKS5</option><option value="HTTP">HTTP CONNECT</option></select></label>
+              <label><span>Port proxy</span><input id="profile-proxy-port" type="number" min="1" max="65535" value="1080"></label>
+              <label class="wide"><span>Địa chỉ proxy</span><input id="profile-proxy-host" maxlength="255" placeholder="127.0.0.1"></label>
+              <label><span>Tên đăng nhập</span><input id="profile-proxy-username" maxlength="255" autocomplete="off"></label>
+              <label><span>Mật khẩu</span><input id="profile-proxy-password" type="password" maxlength="255" autocomplete="off"></label>
+            </div>
+          </div>
+        </details>
+
+        <details class="form-section advanced-section">
+          <summary><span><b>Bảo vệ nâng cao</b><small>Chọn cách xử lý khi có người lạ trong bán kính</small></span><i>⌄</i></summary>
+          <div class="detail-content">
+            <div class="option-grid">
+              <label class="setting-option"><input id="profile-coordinate" type="checkbox"><span><b>Bảo vệ vị trí</b><small>Dừng khi tài khoản bị đẩy khỏi điểm đứng.</small></span></label>
+              <label class="setting-option"><input id="profile-guard" type="checkbox"><span><b>Bảo vệ người lạ</b><small>Bật xử lý người không nằm trong whitelist.</small></span></label>
+            </div>
+            <div class="form-grid spaced">
+              <label><span>Sai lệch tối đa (block)</span><input id="profile-threshold" type="number" min="0.1" max="50" step="0.1" value="1"></label>
+              <label><span>Bán kính quét (block)</span><input id="profile-radius" type="number" min="1" max="256" value="32"></label>
+              <label class="wide"><span>Khi có người lạ</span><select id="profile-stranger-action"><option value="notify">Không out — tiếp tục Auto Sell</option><option value="pause">Không out — dừng Auto Sell đến khi người lạ rời đi</option><option value="disconnect">Thoát game và không tự reconnect</option></select></label>
+              <label class="wide"><span>Người chơi whitelist (cách nhau bằng dấu phẩy)</span><input id="profile-whitelist" placeholder="Lowzii, Player2"></label>
+            </div>
+          </div>
+        </details>
+
+        <div class="modal-actions">
+          <button id="delete-profile" type="button" class="danger-link">Xóa profile</button>
+          <div><button type="button" class="secondary" data-close="profile-dialog">Hủy</button><button type="submit" class="primary">Lưu profile</button></div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="help-dialog" class="modal help-modal">
+      <div class="modal-head">
+        <div><span>HƯỚNG DẪN NHANH</span><h2>Treo Auto Sell trong 4 bước</h2><p>Làm lần lượt từ trên xuống. Mỗi tài khoản Minecraft dùng một profile.</p></div>
+        <button type="button" class="modal-close" data-close="help-dialog">×</button>
+      </div>
+      <div class="help-steps">
+        <article><i>1</i><div><h3>Thêm tài khoản</h3><p>Nhấn <b>“Thêm tài khoản”</b>, nhập tên profile, email Microsoft, server và port. Giữ nguyên các mục khuyên dùng rồi lưu.</p></div></article>
+        <article><i>2</i><div><h3>Nhấn Bắt đầu</h3><p>Lần đầu sẽ xuất hiện mã Microsoft. Mở trang đăng nhập, nhập mã và chờ trạng thái chuyển thành <b>ONLINE</b>.</p></div></article>
+        <article><i>3</i><div><h3>Thêm các acc còn lại</h3><p>Chọn profile khác và làm tương tự. Không cần dừng acc đang online. Chờ từng acc kết nối ổn định.</p></div></article>
+        <article><i>4</i><div><h3>Treo siêu nhẹ</h3><p>Khi tất cả profile ONLINE, ZCore tự chuyển sang treo nền sau 15 giây. Bạn cũng có thể nhấn <b>“Treo siêu nhẹ”</b> ngay. Nhấp đúp biểu tượng khay để mở lại.</p></div></article>
+      </div>
+      <div class="help-notes">
+        <h3>Lưu ý quan trọng</h3>
+        <ul>
+          <li>Nếu Microsoft yêu cầu mã mới, hãy mở lại ZCore từ khay hệ thống.</li>
+          <li>Muốn thêm acc giữa chừng: mở lại giao diện, thêm và Start acc mới, chờ ONLINE rồi bật Treo siêu nhẹ lại.</li>
+          <li>Auto Sell có đồ là chạy: gửi <code>/sell</code>, chờ GUI 90 slot tối đa 3 giây, quickAll vật phẩm, đóng GUI rồi nghỉ theo delay đã chọn.</li>
+          <li>Auto Home nếu bật sẽ gửi <code>/home 1–4</code> theo số phút đã chọn và tự chờ Auto Sell đóng GUI trước.</li>
+          <li>Ô dưới console gửi được lệnh như <code>/balance</code> hoặc <code>/pay TenNguoiChoi 1000</code>.</li>
+          <li>Nút Stop chỉ dừng profile đang chọn; các profile khác vẫn tiếp tục chạy.</li>
+        </ul>
+      </div>
+      <button type="button" class="primary full" data-close="help-dialog">Đã hiểu — bắt đầu sử dụng</button>
+    </dialog>
+
+    <dialog id="auth-dialog" class="modal auth-modal">
+      <div class="modal-head"><div><span>ĐĂNG NHẬP MICROSOFT</span><h2>Liên kết tài khoản</h2><p>Mở trang Microsoft, đăng nhập đúng tài khoản Minecraft rồi nhập mã bên dưới.</p></div><button type="button" class="modal-close" data-close="auth-dialog">×</button></div>
+      <div class="auth-steps"><span>1. Sao chép mã</span><span>2. Mở Microsoft</span><span>3. Chờ ONLINE</span></div>
+      <div id="auth-code" class="device-code">••••••••</div>
+      <button id="open-microsoft" class="primary full">Mở trang đăng nhập Microsoft</button>
+      <p id="auth-message" class="auth-message"></p>
+    </dialog>
+
+    <div id="toast-container" class="toast-container"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
