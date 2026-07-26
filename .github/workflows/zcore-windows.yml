@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # Ten repo ket thuc bang dau cham nen Windows khong tao duoc thu muc workspace
+  # mac dinh (D:\a\limitboard-android.\limitboard-android.) va actions/checkout
+  # chet ngay. Clone tay vao duong dan sach de tranh han che nay cua Windows.
+  ZCORE_DIR: C:\zc\zcore
+
 jobs:
   build:
     # Build tren Windows runner that de EXE khop moi truong nguoi dung chay.
@@ -20,26 +26,31 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - name: Clone repository into a Windows-safe path
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = $env:GITHUB_REPOSITORY
+          $url = "https://x-access-token:${env:GH_TOKEN}@github.com/$repo.git"
+          git clone --depth 1 --branch $env:GITHUB_REF_NAME $url C:\zc
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: zcore/package-lock.json
 
       - name: Install dependencies
-        working-directory: zcore
+        working-directory: ${{ env.ZCORE_DIR }}
         run: npm ci
 
       - name: Run tests
-        working-directory: zcore
+        working-directory: ${{ env.ZCORE_DIR }}
         run: npm test
 
       - name: Verify Auto Sell logic is untouched
-        working-directory: zcore
+        working-directory: ${{ env.ZCORE_DIR }}
         shell: pwsh
         # Rang buoc Repair 22: ba controller nay phai giu nguyen byte-for-byte.
         run: |
@@ -63,14 +74,14 @@ jobs:
           if ($failed) { exit 1 }
 
       - name: Build Setup and Portable EXE
-        working-directory: zcore
+        working-directory: ${{ env.ZCORE_DIR }}
         run: npm run dist:win
 
       - name: Upload Setup installer
         uses: actions/upload-artifact@v4
         with:
           name: ZCore-Setup-x64
-          path: zcore/dist/setup/*.exe
+          path: C:\zc\zcore\dist\setup\*.exe
           if-no-files-found: error
           retention-days: 30
 
@@ -78,6 +89,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ZCore-Portable-x64
-          path: zcore/dist/portable/*.exe
+          path: C:\zc\zcore\dist\portable\*.exe
           if-no-files-found: error
           retention-days: 30
