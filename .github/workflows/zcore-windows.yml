@@ -1,0 +1,106 @@
+name: Build ZCore Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - claude/read-evaluate-source-rupwlr
+    paths:
+      - "zcore/**"
+      - ".github/workflows/zcore-windows.yml"
+
+permissions:
+  contents: read
+
+env:
+  # Ten repo ket thuc bang dau cham nen Windows khong tao duoc thu muc workspace
+  # mac dinh (D:\a\limitboard-android.\limitboard-android.) va actions/checkout
+  # chet ngay. Clone tay vao duong dan sach de tranh han che nay cua Windows.
+  ZCORE_DIR: C:\zc\zcore
+
+jobs:
+  build:
+    # Build tren Windows runner that de EXE khop moi truong nguoi dung chay.
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Clone repository into a Windows-safe path
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $repo = $env:GITHUB_REPOSITORY
+          $url = "https://x-access-token:${env:GH_TOKEN}@github.com/$repo.git"
+          # core.autocrlf=false: Git for Windows mac dinh doi LF -> CRLF khi
+          # checkout, lam doi byte file nguon so voi noi dung trong repo.
+          git -c core.autocrlf=false -c core.eol=lf clone --depth 1 `
+            --branch $env:GITHUB_REF_NAME $url C:\zc
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: ${{ env.ZCORE_DIR }}
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ${{ env.ZCORE_DIR }}
+        run: npm test
+
+      - name: Verify Auto Sell logic is untouched
+        working-directory: ${{ env.ZCORE_DIR }}
+        shell: pwsh
+        # Rang buoc Repair 22: ba controller nay phai giu nguyen byte-for-byte.
+        # Hash duoc tinh tren noi dung da chuan hoa ve LF, nen ket qua giong nhau
+        # tren moi may du cau hinh core.autocrlf cua git la gi. Chi thay doi noi
+        # dung that su moi lam buoc nay that bai.
+        run: |
+          function Get-NormalizedHash($path) {
+            $text = [System.IO.File]::ReadAllText($path) -replace "`r`n", "`n"
+            $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($text)
+            $hash = [System.Security.Cryptography.SHA256]::HashData($bytes)
+            return [System.BitConverter]::ToString($hash).Replace('-', '').ToLower()
+          }
+          $expected = @{
+            "src/core/AutoSellController.js"    = "46ec1180130f866260089a73571c518ee529e1f62665a031f318210af4351f59"
+            "src/core/AutoSellAxeController.js" = "e796aaac6d2fedc25a7426f8f0ddbbee508a11bf34c699b5bc093cfb2100902a"
+            "src/core/AutoHomeController.js"    = "bf23fecbf5c703b885d5b81ce764e09f2689d5cbbf7a89fc196c3272fffdc4e2"
+          }
+          $failed = $false
+          foreach ($file in $expected.Keys) {
+            $actual = Get-NormalizedHash $file
+            if ($actual -ne $expected[$file]) {
+              Write-Host "DOI: $file"
+              Write-Host "  mong doi: $($expected[$file])"
+              Write-Host "  thuc te : $actual"
+              $failed = $true
+            } else {
+              Write-Host "GIU NGUYEN: $file"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Build Setup and Portable EXE
+        working-directory: ${{ env.ZCORE_DIR }}
+        run: npm run dist:win
+
+      - name: Upload Setup installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZCore-Setup-x64
+          path: C:\zc\zcore\dist\setup\*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload Portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ZCore-Portable-x64
+          path: C:\zc\zcore\dist\portable\*.exe
+          if-no-files-found: error
+          retention-days: 30

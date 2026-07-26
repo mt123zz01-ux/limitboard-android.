@@ -1,0 +1,73 @@
+{
+  "name": "zcore",
+  "version": "0.2.4-repair.22",
+  "description": "ZCore - Minecraft 1.21.11 Bua Lo Ban quickAll client with Protocol Max engine",
+  "main": "src/main.js",
+  "author": "Lowzii",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "pack": "electron-builder --dir",
+    "dist:win": "npm run dist:win:setup && npm run dist:win:portable",
+    "dist:win:setup": "electron-builder --win nsis --config.directories.output=dist/setup",
+    "dist:win:portable": "electron-builder --win portable --config.directories.output=dist/portable"
+  },
+  "dependencies": {
+    "minecraft-protocol": "1.66.2",
+    "mineflayer": "4.37.1",
+    "prismarine-chat": "1.13.0",
+    "prismarine-registry": "1.12.0",
+    "vec3": "0.1.10"
+  },
+  "devDependencies": {
+    "electron": "43.1.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "dev.lowzii.zcore",
+    "productName": "ZCore",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "assets/zcore.ico",
+      "signExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "script": "build/installer.nsi",
+      "differentialPackage": false,
+      "artifactName": "ZCore-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ZCore"
+    },
+    "portable": {
+      "artifactName": "ZCore-Portable-${version}-${arch}.${ext}"
+    },
+    "publish": null
+  }
+}

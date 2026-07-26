@@ -1,0 +1,20 @@
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
+const { FileLogger } = require('../src/core/FileLogger')
+
+test('ghi log bất đồng bộ theo đúng thứ tự và flush đầy đủ', async (t) => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'zcore-logs-'))
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }))
+  const logger = new FileLogger(directory)
+  for (let index = 0; index < 100; index += 1) logger.write('profile-1', 'info', `line-${index}`)
+  await logger.flush()
+
+  const file = path.join(directory, fs.readdirSync(directory)[0])
+  const lines = fs.readFileSync(file, 'utf8').trim().split('\n')
+  assert.equal(lines.length, 100)
+  assert.match(lines[0], /line-0$/)
+  assert.match(lines[99], /line-99$/)
+})
